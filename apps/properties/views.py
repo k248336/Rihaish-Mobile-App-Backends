@@ -84,7 +84,7 @@ class PropertyListCreateView(generics.ListCreateAPIView):
                 image_urls.append(url)
 
         # Prepare data for serializer
-        data = request.data.copy()
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
         data['images'] = image_urls
         
         serializer = self.get_serializer(data=data)
@@ -144,7 +144,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
                 image_urls.append(url)
 
         # Prepare data for serializer
-        data = request.data.copy()
+        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
         if uploaded_files or existing_images is not None:
             data['images'] = image_urls
         
