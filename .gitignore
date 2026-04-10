@@ -1,0 +1,26 @@
+# Environments
+.env
+.venv
+venv/
+ENV/
+env/
+
+# Python
+*.pyc
+*~
+__pycache__/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+staticfiles/
+media/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
