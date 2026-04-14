@@ -24,22 +24,19 @@ class ToggleFavoriteView(APIView):
     def post(self, request, property_id):
         try:
             property_obj = Property.objects.get(id=property_id)
-            favorite, created = Favorite.objects.get_or_create(
+            favorite_qs = Favorite.objects.filter(
                 user=request.user,
                 property=property_obj
             )
-            if created:
-                return success_response("Property added to favorites")
-            return success_response("Property is already in favorites")
-        except Property.DoesNotExist:
-            return error_response("Property not found", status_code=404)
-
-    def delete(self, request, property_id):
-        try:
-            property_obj = Property.objects.get(id=property_id)
-            deleted, _ = Favorite.objects.filter(user=request.user, property=property_obj).delete()
-            if deleted:
+            
+            if favorite_qs.exists():
+                favorite_qs.delete()
                 return success_response("Property removed from favorites")
-            return error_response("Property not found in favorites", status_code=404)
+            else:
+                Favorite.objects.create(
+                    user=request.user,
+                    property=property_obj
+                )
+                return success_response("Property added to favorites")
         except Property.DoesNotExist:
             return error_response("Property not found", status_code=404)
