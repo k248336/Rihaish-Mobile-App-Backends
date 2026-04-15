@@ -64,15 +64,20 @@ class PropertyListCreateView(generics.ListCreateAPIView):
         uploaded_files = request.FILES.getlist('uploaded_images')
         image_urls = []
         
-        # Also check if 'images' were provided as a JSON string (for compatibility)
+        # Check if 'images' were provided as a JSON string or list
         existing_images = request.data.get('images', '[]')
-        if isinstance(existing_images, str):
-            try:
-                image_urls = json.loads(existing_images)
-            except json.JSONDecodeError:
-                image_urls = []
-        elif isinstance(existing_images, list):
-            image_urls = existing_images
+        if existing_images:
+            if isinstance(existing_images, str):
+                try:
+                    image_urls = json.loads(existing_images)
+                except json.JSONDecodeError:
+                    # If it's not JSON, it might be a single string URL
+                    if existing_images.startswith('http'):
+                        image_urls = [existing_images]
+                    else:
+                        image_urls = []
+            elif isinstance(existing_images, list):
+                image_urls = existing_images
 
         # Process new file uploads
         for file_obj in uploaded_files:
@@ -80,14 +85,24 @@ class PropertyListCreateView(generics.ListCreateAPIView):
                 ext = os.path.splitext(file_obj.name)[1]
                 filename = f"properties/{request.user.id}_{uuid.uuid4().hex}{ext}"
                 path = default_storage.save(filename, ContentFile(file_obj.read()))
-                url = request.build_absolute_uri(settings.MEDIA_URL + path)
+                # Ensure forward slashes in URL even on Windows
+                path_url = path.replace('\\', '/')
+                url = request.build_absolute_uri(settings.MEDIA_URL + path_url)
                 image_urls.append(url)
 
-        # Prepare data for serializer
-        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
+        # Prepare data for serializer - copy request.data and update 'images'
+        data = request.data.copy()
         data['images'] = image_urls
         
-        serializer = self.get_serializer(data=data)
+        # We need to pass data to serializer. If it's a QueryDict, we convert to dict 
+        # so that 'images' (which is now a list) is preserved correctly.
+        if hasattr(data, 'dict'):
+            final_data = data.dict()
+            final_data['images'] = image_urls # Re-ensure it's the list, not just the last item
+        else:
+            final_data = data
+
+        serializer = self.get_serializer(data=final_data)
         if serializer.is_valid():
             serializer.save()
             return success_response("Property created successfully", data=serializer.data, status_code=201)
@@ -117,8 +132,7 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
         # Handle image files if provided
         uploaded_files = request.FILES.getlist('uploaded_images')
         
-        # Start with existing images if it's a partial update (PATCH)
-        # or if the user explicitly provided an 'images' list in the data
+        # Determine starting image list
         image_urls = []
         existing_images = request.data.get('images', None)
         
@@ -127,7 +141,10 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
                 try:
                     image_urls = json.loads(existing_images)
                 except json.JSONDecodeError:
-                    image_urls = []
+                    if existing_images.startswith('http'):
+                        image_urls = [existing_images]
+                    else:
+                        image_urls = []
             elif isinstance(existing_images, list):
                 image_urls = existing_images
         elif partial:
@@ -140,15 +157,23 @@ class PropertyDetailView(generics.RetrieveUpdateDestroyAPIView):
                 ext = os.path.splitext(file_obj.name)[1]
                 filename = f"properties/{request.user.id}_{uuid.uuid4().hex}{ext}"
                 path = default_storage.save(filename, ContentFile(file_obj.read()))
-                url = request.build_absolute_uri(settings.MEDIA_URL + path)
+                path_url = path.replace('\\', '/')
+                url = request.build_absolute_uri(settings.MEDIA_URL + path_url)
                 image_urls.append(url)
 
         # Prepare data for serializer
-        data = request.data.dict() if hasattr(request.data, 'dict') else request.data.copy()
+        data = request.data.copy()
         if uploaded_files or existing_images is not None:
             data['images'] = image_urls
         
-        serializer = self.get_serializer(instance, data=data, partial=partial)
+        if hasattr(data, 'dict'):
+            final_data = data.dict()
+            if 'images' in data:
+                final_data['images'] = image_urls
+        else:
+            final_data = data
+        
+        serializer = self.get_serializer(instance, data=final_data, partial=partial)
         if serializer.is_valid():
             serializer.save()
             return success_response("Property updated successfully", data=serializer.data)
