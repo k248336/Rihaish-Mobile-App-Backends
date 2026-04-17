@@ -146,11 +146,20 @@ SUPABASE_KEY = config('SUPABASE_KEY')
 SUPABASE_BUCKET = config('SUPABASE_BUCKET', default='rihaish-images')
 
 # ─── OTP Configuration ────────────────────────────────────────────────────────
-OTP_BACKEND = config('OTP_BACKEND', default='console')  # 'console' or 'twilio'
+OTP_BACKEND = config('OTP_BACKEND', default='console')  # 'console' or 'email'
 OTP_EXPIRY_MINUTES = 10
 TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID', default='')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN', default='')
 TWILIO_PHONE_NUMBER = config('TWILIO_PHONE_NUMBER', default='')
+
+# ─── Email Configuration (for OTP) ───────────────────────────────────────────
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default=EMAIL_HOST_USER)
 
 # ─── Google OAuth ─────────────────────────────────────────────────────────────
 GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')

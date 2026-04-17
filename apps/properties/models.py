@@ -8,6 +8,9 @@ class Property(models.Model):
     property_type = models.CharField(max_length=50) # e.g. apartment, house, villa
     size = models.CharField(max_length=50) # e.g. 1500 sqft
     city = models.CharField(max_length=100)
+    address = models.TextField(blank=True, null=True)
+    bedrooms = models.IntegerField(blank=True, null=True)
+    washrooms = models.IntegerField(blank=True, null=True)
     location_lat = models.FloatField(null=True, blank=True)
     location_lng = models.FloatField(null=True, blank=True)
     images = models.JSONField(default=list) # Store list of image URLs
