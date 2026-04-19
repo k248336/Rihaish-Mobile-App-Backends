@@ -49,6 +49,8 @@ class ProfileView(generics.RetrieveUpdateAPIView):
             profile_data['phone'] = data.get('phone')
         if 'bio' in data:
             profile_data['bio'] = data.get('bio')
+        if 'date_of_birth' in data:
+            profile_data['date_of_birth'] = data.get('date_of_birth')
         
         # Always use our new uploaded avatar_url, ignore any existing one in data
         if avatar_url:

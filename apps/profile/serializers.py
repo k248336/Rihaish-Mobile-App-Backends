@@ -5,7 +5,7 @@ from .models import UserProfile
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ('avatar_url', 'phone', 'bio', 'updated_at')
+        fields = ('avatar_url', 'phone', 'bio', 'date_of_birth', 'updated_at')
 
 class UserSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer(required=False)
@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):
         profile.avatar_url = profile_data.get('avatar_url', profile.avatar_url)
         profile.phone = profile_data.get('phone', profile.phone)
         profile.bio = profile_data.get('bio', profile.bio)
+        profile.date_of_birth = profile_data.get('date_of_birth', profile.date_of_birth)
         profile.save()
 
         return instance

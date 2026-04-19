@@ -26,12 +26,15 @@ class PropertyListCreateView(generics.ListCreateAPIView):
         queryset = Property.objects.all().order_by('-created_at')
         
         # Filters
+        listing_type = self.request.query_params.get('listing_type', None)
         prop_type = self.request.query_params.get('type', None)
         min_price = self.request.query_params.get('min_price', None)
         max_price = self.request.query_params.get('max_price', None)
         city = self.request.query_params.get('city', None)
         search = self.request.query_params.get('search', None)
 
+        if listing_type:
+            queryset = queryset.filter(listing_type=listing_type)
         if prop_type:
             queryset = queryset.filter(property_type__icontains=prop_type)
         if min_price:

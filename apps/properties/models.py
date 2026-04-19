@@ -2,10 +2,16 @@ from django.db import models
 from django.contrib.auth.models import User
 
 class Property(models.Model):
+    LISTING_TYPE_CHOICES = [
+        ('sell', 'Sell'),
+        ('rent', 'Rent'),
+    ]
+    
     title = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
     property_type = models.CharField(max_length=50) # e.g. apartment, house, villa
+    listing_type = models.CharField(max_length=10, choices=LISTING_TYPE_CHOICES, default='sell')
     size = models.CharField(max_length=50) # e.g. 1500 sqft
     city = models.CharField(max_length=100)
     address = models.TextField(blank=True, null=True)
