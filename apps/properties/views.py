@@ -9,6 +9,8 @@ from django.db.models import Q
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.conf import settings
+from django.contrib.auth.models import User
+from apps.notifications.models import Notification
 import uuid
 import os
 import json
@@ -107,7 +109,23 @@ class PropertyListCreateView(generics.ListCreateAPIView):
 
         serializer = self.get_serializer(data=final_data)
         if serializer.is_valid():
-            serializer.save()
+            property_obj = serializer.save()
+            
+            # Send new property notifications to all users except the owner
+            users = User.objects.exclude(id=request.user.id)
+            notifications = [
+                Notification(
+                    user=user,
+                    type='new_property',
+                    title='New Property Listed!',
+                    message=f"{request.user.username} has listed a new property: {property_obj.title}",
+                    related_property=property_obj,
+                    related_user=request.user
+                )
+                for user in users
+            ]
+            Notification.objects.bulk_create(notifications)
+            
             return success_response("Property created successfully", data=serializer.data, status_code=201)
         return error_response("Invalid data", data=serializer.errors)
 

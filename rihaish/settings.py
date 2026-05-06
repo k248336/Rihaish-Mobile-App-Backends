@@ -28,6 +28,8 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
 ]
 
 LOCAL_APPS = [
@@ -39,6 +41,7 @@ LOCAL_APPS = [
     'apps.profile',
     'apps.upload',
     'apps.settings_app',
+    'apps.notifications',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -121,6 +124,18 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+# ─── Spectacular (Swagger) Configuration ──────────────────────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Rihaish Mobile App API',
+    'DESCRIPTION': 'API documentation for the Rihaish Real Estate Mobile Application.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
 }
 
 # ─── JWT Configuration ────────────────────────────────────────────────────────

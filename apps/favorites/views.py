@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from .models import Favorite
 from apps.properties.models import Property
+from apps.notifications.models import Notification
 from .serializers import FavoriteSerializer
 from utils.responses import success_response, error_response
 
@@ -37,6 +38,18 @@ class ToggleFavoriteView(APIView):
                     user=request.user,
                     property=property_obj
                 )
+                
+                # Send notification to property owner
+                if property_obj.owner != request.user:
+                    Notification.objects.create(
+                        user=property_obj.owner,
+                        type='property_liked',
+                        title='Your Property Was Liked!',
+                        message=f"{request.user.username} liked your property: {property_obj.title}",
+                        related_property=property_obj,
+                        related_user=request.user
+                    )
+                
                 return success_response("Property added to favorites")
         except Property.DoesNotExist:
             return error_response("Property not found", status_code=404)
