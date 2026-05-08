@@ -29,6 +29,17 @@ logger = logging.getLogger(__name__)
 def send_otp_email_async(email, otp_code):
     from django.core.mail import send_mail
     try:
+        logger.info(f"Preparing to send OTP email to {email}")
+        logger.info(f"EMAIL_HOST: {settings.EMAIL_HOST}")
+        logger.info(f"EMAIL_PORT: {settings.EMAIL_PORT}")
+        logger.info(f"EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
+        logger.info(f"EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+        logger.info(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+        
+        if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
+            logger.error("Missing email configuration variables!")
+            return
+            
         send_mail(
             subject='Your Rihaish OTP Code',
             message=f'Your OTP for Rihaish is: {otp_code}',
@@ -36,9 +47,11 @@ def send_otp_email_async(email, otp_code):
             recipient_list=[email],
             fail_silently=False,
         )
-        logger.info(f"OTP email sent successfully to {email}")
+        logger.info(f"✅ OTP email sent successfully to {email}")
     except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
+        logger.error(f"❌ Failed to send OTP email to {email}: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
 
 
 def get_tokens_for_user(user):
@@ -97,10 +110,24 @@ class SendOTPView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        logger.info("=== SendOTPView endpoint hit ===")
+        logger.info(f"OTP_BACKEND: {settings.OTP_BACKEND}")
+        logger.info(f"EMAIL_BACKEND: {settings.EMAIL_BACKEND}")
+        logger.info(f"EMAIL_HOST: {settings.EMAIL_HOST}")
+        logger.info(f"EMAIL_PORT: {settings.EMAIL_PORT}")
+        logger.info(f"EMAIL_USE_TLS: {settings.EMAIL_USE_TLS}")
+        logger.info(f"EMAIL_HOST_USER: {settings.EMAIL_HOST_USER}")
+        logger.info(f"DEFAULT_FROM_EMAIL: {settings.DEFAULT_FROM_EMAIL}")
+        
+        has_email_pass = bool(settings.EMAIL_HOST_PASSWORD)
+        logger.info(f"EMAIL_HOST_PASSWORD is set: {has_email_pass}")
+        
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
             otp_code = str(random.randint(100000, 999999))
+            
+            logger.info(f"Generating OTP for email: {email}")
             
             OTPVerification.objects.update_or_create(
                 email=email,
@@ -109,7 +136,9 @@ class SendOTPView(APIView):
 
             if settings.OTP_BACKEND == 'console':
                 print(f"\n[DEV] OTP for {email} is {otp_code}\n")
+                logger.info(f"[DEV] OTP for {email} is {otp_code}")
             else:
+                logger.info("Attempting to send OTP via email...")
                 # Send OTP via email in background thread
                 thread = threading.Thread(target=send_otp_email_async, args=(email, otp_code))
                 thread.daemon = True
