@@ -16,10 +16,29 @@ from .serializers import (
 )
 from .models import OTPVerification
 import random
+import threading
+import logging
 from django.conf import settings
 import requests
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+
+logger = logging.getLogger(__name__)
+
+
+def send_otp_email_async(email, otp_code):
+    from django.core.mail import send_mail
+    try:
+        send_mail(
+            subject='Your Rihaish OTP Code',
+            message=f'Your OTP for Rihaish is: {otp_code}',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[email],
+            fail_silently=False,
+        )
+        logger.info(f"OTP email sent successfully to {email}")
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {email}: {str(e)}")
 
 
 def get_tokens_for_user(user):
@@ -91,18 +110,10 @@ class SendOTPView(APIView):
             if settings.OTP_BACKEND == 'console':
                 print(f"\n[DEV] OTP for {email} is {otp_code}\n")
             else:
-                # Send OTP via email
-                from django.core.mail import send_mail
-                try:
-                    send_mail(
-                        subject='Your Rihaish OTP Code',
-                        message=f'Your OTP for Rihaish is: {otp_code}',
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[email],
-                        fail_silently=False,
-                    )
-                except Exception as e:
-                    return error_response(f"Email error: {str(e)}", status_code=500)
+                # Send OTP via email in background thread
+                thread = threading.Thread(target=send_otp_email_async, args=(email, otp_code))
+                thread.daemon = True
+                thread.start()
 
             return success_response("OTP sent successfully", {"email": email})
         return error_response("Invalid data", data=serializer.errors)
